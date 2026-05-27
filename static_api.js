@@ -54,7 +54,7 @@ function getWorker() {
         serverMode: "full",
         url: DB_URL,
         requestChunkSize: REQUEST_CHUNK,
-        fileSize: DB_FILE_SIZE,
+        fileLength: DB_FILE_SIZE,
       },
     }],
     WORKER_URL,
