@@ -42,6 +42,7 @@ const WORKER_URL      = CFG.workerUrl      || "./sqlite.worker.js";
 const WASM_URL        = CFG.wasmUrl        || "./sql-wasm.wasm";
 const REQUEST_CHUNK   = CFG.requestChunkSize || 4096;
 const CACHE_PAGES     = CFG.maxBytesToRead   || 50 * 1024 * 1024;
+const DB_FILE_SIZE    = CFG.fileSize         || 19943424;
 
 let _workerPromise = null;
 function getWorker() {
@@ -53,6 +54,7 @@ function getWorker() {
         serverMode: "full",
         url: DB_URL,
         requestChunkSize: REQUEST_CHUNK,
+        fileLength: DB_FILE_SIZE,
       },
     }],
     WORKER_URL,
