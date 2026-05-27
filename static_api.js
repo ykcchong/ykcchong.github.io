@@ -22,9 +22,14 @@
  *   GET  /api/lookup/structural
  *   POST /api/lookup/variants
  */
-// NB: use jsdelivr's `+esm` redirect — the bare /dist/index.js is a CJS
-// bundle and does NOT expose `createDbWorker` as a named ES export.
-import { createDbWorker } from "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/+esm";
+// jsDelivr currently exposes createDbWorker on the default export for +esm.
+// Import the namespace via default so the shim survives CDN export-shape changes.
+import sqlJsHttpVfs from "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/+esm";
+
+const createDbWorker = sqlJsHttpVfs?.createDbWorker;
+if (typeof createDbWorker !== "function") {
+  throw new Error("sql.js-httpvfs did not expose createDbWorker");
+}
 
 // ---------------------------------------------------------------------------
 // Boot
