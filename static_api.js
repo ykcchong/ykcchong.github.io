@@ -22,15 +22,19 @@
  *   GET  /api/lookup/structural
  *   POST /api/lookup/variants
  */
-import { createDbWorker } from "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/dist/index.js";
+// NB: use jsdelivr's `+esm` redirect — the bare /dist/index.js is a CJS
+// bundle and does NOT expose `createDbWorker` as a named ES export.
+import { createDbWorker } from "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/+esm";
 
 // ---------------------------------------------------------------------------
 // Boot
 // ---------------------------------------------------------------------------
 const CFG = window.__MITOMAP_STATIC_CFG__ || {};
 const DB_URL          = CFG.dbUrl          || "./mitomap.sqlite";
-const WORKER_URL      = CFG.workerUrl      || "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/dist/sqlite.worker.js";
-const WASM_URL        = CFG.wasmUrl        || "https://cdn.jsdelivr.net/npm/sql.js-httpvfs@0.8.12/dist/sql-wasm.wasm";
+// Worker + wasm MUST be same-origin: browsers refuse to instantiate Web Workers
+// from a different origin (CORS).  Vendored copies live alongside this file.
+const WORKER_URL      = CFG.workerUrl      || "./sqlite.worker.js";
+const WASM_URL        = CFG.wasmUrl        || "./sql-wasm.wasm";
 const REQUEST_CHUNK   = CFG.requestChunkSize || 4096;
 const CACHE_PAGES     = CFG.maxBytesToRead   || 50 * 1024 * 1024;
 

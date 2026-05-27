@@ -81,6 +81,17 @@ chunks using the upstream `create-db` helper.  That mode is not enabled here
 | `app.js`          | Copy of `app/static/app.js` with two patches: `api()` delegates to `window.__api`; auto-boot of `loadTables()` is deferred until the worker is ready. |
 | `views.js`        | Verbatim copy of `app/static/views.js`.               |
 | `static_api.js`   | The ES-module shim. Boots sql.js-httpvfs, registers `window.__api`, then calls `loadTables()`. |
+| `sqlite.worker.js`| Vendored copy of `sql.js-httpvfs` worker — **must be same-origin** (browsers refuse cross-origin Web Workers). |
+| `sql-wasm.wasm`   | Vendored copy of the SQLite WASM binary, loaded by the worker. |
+
+### Deploying to GitHub Pages
+
+Everything in this folder (including `sqlite.worker.js`, `sql-wasm.wasm`, and
+`mitomap.sqlite`) must be pushed to the `gh-pages` branch / `docs/` folder and
+sit at the **same origin** as `index.html`.  The library imports of
+`sql.js-httpvfs` itself use jsdelivr's `+esm` redirect (which returns a real ES
+module), but the worker and wasm cannot be loaded cross-origin and so are
+vendored here.
 
 ## Re-syncing after backend changes
 
