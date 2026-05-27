@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MITOMAP Explorer (static)</title>
+<link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+<header>
+  <h1>MITOMAP <span class="muted">explorer · static</span></h1>
+  <nav>
+    <button id="tab-position" class="tab active">Position</button>
+    <button id="tab-region" class="tab">Loci</button>
+    <button id="tab-disease" class="tab">Disease</button>
+    <button id="tab-structural" class="tab">Structural</button>
+    <button id="tab-report" class="tab">Report</button>
+    <button id="tab-browse" class="tab" hidden>Browse</button>
+    <button id="tab-sql" class="tab" hidden>SQL</button>
+    <button id="tab-about" class="tab">About</button>
+    <span id="status" class="muted"></span>
+  </nav>
+</header>
+
+<main>
+  <aside id="sidebar">
+    <input id="tableFilter" type="search" placeholder="Filter tables…" />
+    <ul id="tableList"></ul>
+  </aside>
+
+  <section id="position" class="view">
+    <div class="toolbar">
+      <h2>Position lookup</h2>
+      <div class="grow"></div>
+      <button id="posPrev" title="previous variant position">‹ prev</button>
+      <label>Pos <input id="posInput" type="text" inputmode="numeric" pattern="[0-9]*" value="3243" style="width:6em" /></label>
+      <button id="posNext" title="next variant position">next ›</button>
+      <label>Ref <input id="posRef" type="text" maxlength="1" style="width:3em" placeholder="A" /></label>
+      <label>Alt <input id="posAlt" type="text" maxlength="1" style="width:3em" placeholder="G" /></label>
+      <button id="posBtn">Lookup</button>
+    </div>
+    <div id="genomeBar" class="genome-bar" title="click anywhere on the bar to jump"></div>
+    <div id="locusTrack" class="locus-track"></div>
+    <div id="zoomStrip" class="zoom-strip"></div>
+    <div id="posOut" class="cards"></div>
+  </section>
+
+  <section id="region" class="view hidden">
+    <div class="split-pane">
+      <div class="split-left">
+        <div class="split-toolbar">
+          <input id="locusSearch" type="search" placeholder="search locus (e.g. ND1, MT-TL1, leucine, tRNA) or range 3000-3100" />
+          <label class="opt"><input id="locusOnlyDz" type="checkbox" checked /> only loci with disease variants</label>
+        </div>
+        <div id="locusList" class="split-list"></div>
+      </div>
+      <div class="split-right">
+        <div id="regOut" class="cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="disease" class="view hidden phen-above">
+    <div class="split-pane split-pane-3">
+      <div class="split-left">
+        <div id="dzPhen" class="split-phen-full"></div>
+      </div>
+      <div class="split-mid">
+        <div id="dzPhenTop" class="split-phen-top"></div>
+        <div id="dzFilters" class="split-filters"></div>
+        <div id="dzListHead" class="split-list-head">
+          <span id="dzListHeadText"></span>
+        </div>
+        <div id="dzList" class="split-list"></div>
+      </div>
+      <div class="split-right">
+        <div id="dzDetail" class="cards"><p class="muted" style="padding:12px">Pick a mutation in the middle pane.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="structural" class="view hidden">
+    <div class="toolbar">
+      <h2>Structural variants</h2>
+      <span class="muted">deletions, multi-deletions, insertions, rearrangements</span>
+      <div class="grow"></div>
+      <label>Start <input id="strStart" type="number" min="1" max="16569" style="width:6em" placeholder="any" /></label>
+      <label>End <input id="strEnd" type="number" min="1" max="16569" style="width:6em" placeholder="any" /></label>
+      <label>Position <input id="strPos" type="number" min="1" max="16569" style="width:6em" placeholder="any" title="must lie inside the variant span"/></label>
+      <label>Locus
+        <select id="strLocus" style="min-width:8em"><option value="">any</option></select>
+      </label>
+      <button id="strSearchBtn">Search</button>
+      <button id="strResetBtn" title="clear all filters">Reset</button>
+    </div>
+    <div class="str-tabs">
+      <button class="str-tab active" data-type="deletion">Deletions <span class="muted str-n" id="strN-deletion"></span></button>
+      <button class="str-tab" data-type="mdeletion">Multi-deletions <span class="muted str-n" id="strN-mdeletion"></span></button>
+      <button class="str-tab" data-type="insertion">Insertions <span class="muted str-n" id="strN-insertion"></span></button>
+      <button class="str-tab" data-type="rearrangement">Rearrangements <span class="muted str-n" id="strN-rearrangement"></span></button>
+    </div>
+    <div id="strOut" class="cards"></div>
+  </section>
+
+  <section id="report" class="view hidden">
+    <div class="toolbar">
+      <h2>Variant report</h2>
+      <span class="muted">upload a NextGENe output ([Labno]_Mutation_Report1.txt) and annotate every variant</span>
+      <div class="grow"></div>
+      <label class="opt"><input id="reportFile" type="file" accept=".txt,.tsv,.csv,text/plain" /></label>
+      <button id="reportPdf" title="download annotated table as PDF" disabled>Download PDF</button>
+      <button id="reportReset" title="clear current report">Reset</button>
+    </div>
+    <div id="reportMsg" class="muted" style="padding:6px 12px">Choose a file. Lines above the row starting with <code>Index</code> are ignored.</div>
+    <div id="reportOut" class="cards"></div>
+  </section>
+
+  <section id="browse" class="view hidden" hidden>
+    <div class="toolbar">
+      <h2 id="browseTitle">Select a table</h2>
+      <div class="grow"></div>
+      <input id="searchBox" type="search" placeholder="Search rows…" />
+      <label>Rows/page
+        <select id="pageSize">
+          <option>25</option><option selected>50</option>
+          <option>100</option><option>250</option><option>500</option>
+        </select>
+      </label>
+      <button id="prevBtn">‹ Prev</button>
+      <span id="pageInfo" class="muted"></span>
+      <button id="nextBtn">Next ›</button>
+    </div>
+    <div id="grid" class="grid-wrap"><p class="muted">Pick a table on the left.</p></div>
+  </section>
+
+  <section id="sql" class="view hidden" hidden>
+    <div class="toolbar">
+      <h2>Read-only SQL</h2>
+      <div class="grow"></div>
+      <label>Limit
+        <select id="sqlLimit">
+          <option>100</option><option selected>500</option>
+          <option>1000</option><option>2000</option><option>5000</option>
+        </select>
+      </label>
+      <button id="runSqlBtn">Run (Ctrl+Enter)</button>
+    </div>
+    <textarea id="sqlInput" spellcheck="false"
+      placeholder="SELECT * FROM polymorphism WHERE position BETWEEN 3000 AND 3100 LIMIT 50;"></textarea>
+    <div id="sqlMsg" class="muted"></div>
+    <div id="sqlGrid" class="grid-wrap"></div>
+  </section>
+
+  <section id="about" class="view hidden">
+    <div class="about-wrap">
+      <h2>About MITOMAP Explorer (static build)</h2>
+      <p id="aboutDb" class="muted">Loading database info…</p>
+      <p class="muted">
+        This is the server-less build: the entire MITOMAP sqlite database is streamed
+        directly into your browser via HTTP Range requests (sql.js-httpvfs).
+        No backend server is involved.
+      </p>
+
+      <h3>Authorship</h3>
+      <p>
+        (c) 2026 Calvin Chong. The Mitomap explorer was written out of frustration due to the frequent downtime of the MitoMAP website.
+      </p>
+
+      <h3>License</h3>
+      <p>
+        The MITOMAP database content is distributed under the
+        <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">Creative Commons Attribution 3.0 (CC&nbsp;BY&nbsp;3.0)</a>
+        license. You are free to share and adapt the material provided appropriate credit is given.
+      </p>
+
+      <h3>Citation</h3>
+      <p><i>MITOMAP: A Human Mitochondrial Genome Database.</i> <a href="http://www.mitomap.org" target="_blank" rel="noopener">http://www.mitomap.org</a>, 2023</p>
+
+      <h3>Per-table edit dates</h3>
+      <div id="aboutTables" class="grid-wrap"></div>
+    </div>
+  </section>
+</main>
+
+<!-- Optional override: override DB url / chunk size / wasm host before loading the shim.
+<script>
+  window.__MITOMAP_STATIC_CFG__ = {
+    dbUrl: "./mitomap.sqlite",
+    requestChunkSize: 4096,
+    maxBytesToRead: 50 * 1024 * 1024,
+  };
+</script>
+-->
+
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+<script type="module" src="./static_api.js"></script>
+<script src="./app.js"></script>
+<script src="./views.js"></script>
+</body>
+</html>
